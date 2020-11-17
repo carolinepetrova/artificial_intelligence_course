@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/kolevak/Desktop/artificial_intelligence_course/TravellingSalesmanGeneticAlgorithm/main.cpp
+iostream
+-
+cmath
+-
+vector
+-
+cstdlib
+-
+algorithm
+-
+limits
+-
+random
+-
+
