@@ -1,5 +1,6 @@
 import math
 import copy
+import time
 
 class Board:
 
@@ -216,8 +217,10 @@ if __name__ == "__main__":
             exit(-1)
         matrix.append(row)
     board = Board(matrix,pos_of_zero,"start")
+    start_time = time.time()
     if board.is_solvable():
         sliding_blocks = SlidingBlocks(board)
         sliding_blocks.play()
     else:
         print("Board is not solvable!")
+    print("--- %s seconds ---" % (time.time() - start_time))

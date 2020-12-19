@@ -1,0 +1,3 @@
+/Users/kolevak/Desktop/artificial_intelligence_course/TicTacToe_MinMax/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/kolevak/Desktop/artificial_intelligence_course/TicTacToe_MinMax/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/kolevak/Desktop/artificial_intelligence_course/TicTacToe_MinMax/cmake-build-debug/CMakeFiles/TicTacToe_MinMax.dir

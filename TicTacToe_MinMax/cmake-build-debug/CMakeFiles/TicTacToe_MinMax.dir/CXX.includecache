@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/kolevak/Desktop/artificial_intelligence_course/TicTacToe_MinMax/main.cpp
+iostream
+-
+algorithm
+-
+vector
+-
+

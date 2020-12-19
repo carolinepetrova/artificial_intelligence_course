@@ -9,6 +9,27 @@
 using namespace std::chrono;
 
 using namespace std;
+
+
+/***
+Optimizations:
+- using the idea of merge sort so we can count the inversions in O(nlogn) time
+- keeping track of the queens in 3 1D arrays.
+- queeenPos - the index of the array is the num of the col and the number in that index is the pos of the row
+- mainDiagonalConflicts keeps the "left" diagonals conflicts. If we have 4x4 board the diagonals are 7 and they are stored like this:
+  | 3 | 4 | 5 | 6 |
+  | 2 | 3 | 4 | 5 |
+  | 1 | 2 | 3 | 4 |
+  | 0 | 1 | 2 | 3 |
+ - diagonal2Conflicts keeps the right diagonal conflicts. 
+  | 0 | 1 | 2 | 3 |
+  | 1 | 2 | 3 | 4 |
+  | 2 | 3 | 4 | 5 |
+  | 3 | 4 | 5 | 6 | 
+ - when we choose the queen which we will move if there are more than one with the same conflicts we choose randomly between them
+ - when there is more than one row with min conflicts we again choose randomly 
+
+***/
  
 class Board {
     private:
@@ -20,7 +41,8 @@ class Board {
 
 
         void initializeBoardWithRandomShuffle() {
-            // At first we put the queens in the same row
+            // At first we put the queens in the same row 
+            // EDIT: нз какво съм си мислела тук, по главния диагонал ги слагам
             for (int i = 0; i < size; i++) {
                 queenPos[i] = i;
             }

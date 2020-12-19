@@ -9,9 +9,8 @@
 int COORD_SYSTEM_LIMITS = 500;
 // 1% mutations rate
 double MUTATION_RATE = 0.01;
-
-double ELITISM_COEFFICIENT = 0.4;
-
+int GENERATION_COUNT = 10000;
+int POPULATION_SIZE = 200;
 
 struct City {
     int posX;
@@ -44,8 +43,6 @@ struct City {
 struct Route {
 
     std::vector<City> vectorOfCities;
-    // used for roulette wheel selection
-    double probability;
     double fitness;
 
     Route(std::vector<City> _vectorOfCities) {
@@ -116,8 +113,8 @@ public:
 
     TravellingSalesman(int _numOfCities) {
         numOfCities = _numOfCities;
-        numOfGenerations = 100;
-        populationCount = 200;
+        numOfGenerations = GENERATION_COUNT;
+        populationCount = POPULATION_SIZE;
     }
 
     void generateCities() {
@@ -144,16 +141,6 @@ public:
         return generation;
     }
 
-    Generation getElite(Generation generation) {
-        sortGeneration(generation);
-        return std::vector<Route>
-                (generation.begin(), generation.begin() + (int)(populationCount* ELITISM_COEFFICIENT));
-    }
-
-    Generation matingPool(Generation generation) {
-        Generation matingPool;
-
-    }
 
     void sortGeneration(Generation & generation) {
         std::sort(generation.begin(), generation.end(),[](const Route & a, const Route & b) -> bool
@@ -162,21 +149,7 @@ public:
         });
     }
 
-    Generation createNextGeneration(Generation currentGeneration) {
-        Generation matingPool = selectByRouletteWheel(currentGeneration);
-        // elitism
-        sortGeneration(currentGeneration);
-        Generation nextGeneration = std::vector<Route> (currentGeneration.begin(), currentGeneration.begin() + 20);
-        for(int i = 20; i < currentGeneration.size()-1; i++) {
-
-           nextGeneration.push_back(crossover2(matingPool[i], matingPool[i+1],matingPool));
-        }
-
-        mutate(nextGeneration);
-        return nextGeneration;
-    }
-
-    Route crossover2(Route parent1, Route parent2, Generation & nextGeneration) {
+    Route crossover(Route parent1, Route parent2, Generation & nextGeneration) {
         // Create new child tour
         std::vector<City> childRoute(parent1.vectorOfCities.size(), City());
 
@@ -216,38 +189,6 @@ public:
         return child;
     }
 
-    // one point crossover
-    void crossover(Route parent1, Route parent2, Generation & nextGeneration) {
-        int point = generateRandomNumber(parent1.vectorOfCities.size());
-        std::vector<City> childRoute1;
-        std::vector<City> childRoute2;
-        childRoute1 = std::vector<City>
-                (parent1.vectorOfCities.begin(), parent1.vectorOfCities.begin() + point);
-        childRoute2 = std::vector<City>
-                (parent2.vectorOfCities.begin(), parent2.vectorOfCities.begin() + point);
-
-        for(int i = 0; i < parent2.vectorOfCities.size(); i++) {
-            // copying second parent genes to child1
-            if(!std::any_of(childRoute1.begin(), childRoute1.end(),
-                            [parent2,i](City elem){return elem == parent2.vectorOfCities[i];}) &&
-                    childRoute1.size() < parent2.vectorOfCities.size()) {
-                childRoute1.push_back(parent2.vectorOfCities[i]);
-            }
-
-            // copying first parent genes to child2
-            if(!std::any_of(childRoute2.begin(),childRoute2.end(),
-                            [parent1,i](City elem){return elem == parent1.vectorOfCities[i];}) &&
-                    childRoute2.size() < parent1.vectorOfCities.size()) {
-                childRoute2.push_back(parent1.vectorOfCities[i]);
-            }
-        }
-        Route child1 = Route(childRoute1);
-        Route child2 = Route(childRoute2);
-        nextGeneration.push_back(child1);
-        nextGeneration.push_back(child2);
-
-    }
-
     // swap mutation
     void mutate(Generation & generation) {
         std::random_device rd;  //Will be used to obtain a seed for the random number engine
@@ -262,16 +203,6 @@ public:
                 generation[offspring].updateFitness();
             }
         }
-    }
-
-    Route getFittest(const Generation & generation) {
-        Route winner = generation[0];
-        for(int i = 1; i < generation.size(); i++) {
-            if (winner.fitness > generation[i].fitness)
-                winner = generation[i];
-
-        }
-        return winner;
     }
 
     void averageFitness(const Generation & generation) {
@@ -289,78 +220,46 @@ public:
     void findPathSteadyState() {
         Generation initialGeneration = generateInitialGeneration();
         sortGeneration(initialGeneration);
-        printf("Initial Generation best: ");
-        initialGeneration[0].print();
         int numOfIndividualsToShow = (numOfGenerations - 2) / 3;
         for(int i = 0; i < numOfGenerations; i++) {
             Route parent1 = tournamentSelection(initialGeneration, 3);
             Route parent2 = tournamentSelection(initialGeneration, 3);
 
+            int convergenceCoefficient = 0;
             while(parent1 == parent2) {
+                convergenceCoefficient++;
+                if (convergenceCoefficient > (int)(numOfGenerations * 0.5))
+                    mutate(initialGeneration);
                 parent2 = tournamentSelection(initialGeneration, 3);
             }
             Generation nextGeneration;
-            nextGeneration.push_back(crossover2(parent1, parent2, nextGeneration));
+            nextGeneration.push_back(crossover(parent1, parent2, nextGeneration));
 
             mutate(nextGeneration);
 
             initialGeneration[initialGeneration.size()-1] = nextGeneration[0];
             sortGeneration(initialGeneration);
 
-            if(i == numOfIndividualsToShow || i == numOfIndividualsToShow * 2 || i == (numOfIndividualsToShow * 3 - 50)) {
-                printf("%d Generation best: ", i+2);
+            if(i == 10 || i == numOfIndividualsToShow || i == numOfIndividualsToShow * 2 || i == (numOfIndividualsToShow * 3 - 100)) {
+                printf("%d Generation best: ", i);
                 initialGeneration[0].print();
             }
         }
-        printf("Final eneration best: ");
+        printf("Final generation best: ");
         initialGeneration[0].print();
-    }
-
-    Route rouletteWheel(Generation generation) {
-        double totalSum = 0;
-        std::vector<City> candidate;
-
-        for (int i=0; i< generation.size(); i++){
-            totalSum += generation[i].fitness;
-        }
-
-        for (int i=0; i< generation.size(); i++) {
-            generation[i].probability = generation[i].fitness/totalSum;
-        }
-
-        double partialSum = 0;
-
-        std::random_device rd;  //Will be used to obtain a seed for the random number engine
-        std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-        std::uniform_real_distribution<> distrib(0, 1);
-        double roulette = distrib(gen);
-
-        for(int i=0; i< generation.size(); i++) {
-            partialSum+= generation[i].probability;
-
-            if(partialSum>=roulette)
-            {
-                candidate = generation[i].vectorOfCities;
-                break;
-            }
-        }
-
-        return Route(candidate);
-    }
-
-    Generation selectByRouletteWheel(Generation generation) {
-        Generation nextGeneration;
-        for(int i = 0; i < generation.size();i++) {
-            nextGeneration.push_back(rouletteWheel(generation));
-        }
-        return nextGeneration;
     }
 };
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
-    TravellingSalesman travellingSalesman = TravellingSalesman(25);
+    int n;
+    printf("Input number of cities: ");
+    scanf("%d",&n);
+    TravellingSalesman travellingSalesman = TravellingSalesman(n);
     travellingSalesman.generateCities();
+    auto started = std::chrono::high_resolution_clock::now();
     travellingSalesman.findPathSteadyState();
+    auto done = std::chrono::high_resolution_clock::now();
+    printf("Execution time:\n");
+    printf("%lf%s", std::chrono::duration_cast<std::chrono::microseconds>(done-started).count() * 0.000001, " seconds") ;
     return 0;
 }
