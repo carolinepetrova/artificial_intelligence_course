@@ -21,10 +21,11 @@ using std::unordered_map;
 using std::string;
 using std::fstream;
 
+const int NUM_OF_FEATURES = 16;
+
 struct FeaturePoint {
     int _numOfYes;
     int _numOfNo;
-    int _numOfUnknown;
 
     FeaturePoint() {
         _numOfNo = 0;
@@ -50,10 +51,7 @@ private:
     int numOfDemocrats;
     int totalNum;
     unordered_map<string, vector<FeaturePoint>> _frequencyTable;
-public:
-    unordered_map<string, vector<FeaturePoint>> & getTable()  {
-        return _frequencyTable;
-    }
+    vector<string> classesName{"republican", "democrat"};
     
     void setNumOfRepublicansAndDemocrats(vector<FeatureVector> data) {
         numOfRepublicans = 0;
@@ -67,15 +65,28 @@ public:
         }
         totalNum = numOfDemocrats + numOfRepublicans;
     }
+public:
+    
+    FrequencyTable(vector<FeatureVector> dataset) {
+        for (string className : classesName) {
+            vector<FeaturePoint> featurePointVector;
+            for (int i = 0; i < NUM_OF_FEATURES; i++) {
+                featurePointVector.push_back(FeaturePoint());
+            }
+            _frequencyTable[className] = featurePointVector;
+        }
+        setNumOfRepublicansAndDemocrats(dataset);
+    }
+    
+    unordered_map<string, vector<FeaturePoint>> & getTable()  {
+        return _frequencyTable;
+    }
+    
     
     int getNumOfRepublicans() const { return numOfRepublicans; }
     int getNumOfDemocrats() const {return numOfDemocrats; }
     int getAll() const { return totalNum;}
 
-    bool containsKey(string key) {
-        std::unordered_map<std::string,vector<FeaturePoint>>::const_iterator got = _frequencyTable.find(key);
-        return (got == _frequencyTable.end());
-    }
 };
 
 class NaiveBayesClassifier {
@@ -84,27 +95,8 @@ public:
         readFromFile(filename);
     }
 
-    vector<string> getClasses(vector<FeatureVector> data) {
-        vector<string> classesName;
-        for (FeatureVector featureVector : data) {
-            if(std::find(classesName.begin(), classesName.end(), featureVector.className) == classesName.end()) {
-                classesName.push_back(featureVector.className);
-            }
-        }
-        return classesName;
-    }
-
     FrequencyTable train(vector<FeatureVector> trainingData) {
-        FrequencyTable table;
-        table.setNumOfRepublicansAndDemocrats(trainingData);
-        // TODO might add to FrequencyTable constructor
-        for (string className : getClasses(trainingData)) {
-            vector<FeaturePoint> featurePointVector;
-            for (int i = 0; i < 16; i++) {
-                featurePointVector.push_back(FeaturePoint());
-            }
-            table.getTable()[className] = featurePointVector;
-        }
+        FrequencyTable table = FrequencyTable(trainingData);
         for(FeatureVector featureVector : trainingData) {
             vector<string> featureValues = featureVector.featureValues;
             for(int i = 0 ; i < featureValues.size(); i++) {
@@ -205,9 +197,6 @@ private:
                         probability += log((double)(1 + point._numOfYes) / (point.getTotal() + 2));
                     else if (featureValue == "n")
                         probability += log((double)(1+ point._numOfNo) / (point.getTotal() + 2));
-                    else if (featureValue == "?") {
-                        probability *= log((double)(1+ point._numOfUnknown) / (point.getTotal() + 2));
-                    }
                 }
         return probability;
     }
@@ -231,7 +220,6 @@ private:
 };
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
     NaiveBayesClassifier naiveBayesClassifier = NaiveBayesClassifier("/Users/kolevak/Desktop/artificial_intelligence_course/NaiveBayesClassifier/NaiveBayesClassifier/house-votes-84.data");
     naiveBayesClassifier.run();
     return 0;
